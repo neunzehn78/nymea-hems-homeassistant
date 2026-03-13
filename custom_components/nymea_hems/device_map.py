@@ -25,9 +25,9 @@ STATE_CLASS_OVERRIDE: dict[str, str | None] = {
     # Energy totals (cumulative) – must be TOTAL_INCREASING for Energy Dashboard
     "totalEnergyProduced":   SensorStateClass.TOTAL_INCREASING,
     "totalEnergyConsumed":   SensorStateClass.TOTAL_INCREASING,
-    "feedBatteryTotal":      SensorStateClass.TOTAL_INCREASING,
-    "feedBatteryMonth":      SensorStateClass.TOTAL_INCREASING,
-    "feedBatteryToday":      SensorStateClass.TOTAL_INCREASING,
+    "feedBatteryTotal":      SensorStateClass.TOTAL,
+    "feedBatteryMonth":      SensorStateClass.TOTAL,
+    "feedBatteryToday":      SensorStateClass.TOTAL,
     "capacity":              SensorStateClass.MEASUREMENT,
 }
 
