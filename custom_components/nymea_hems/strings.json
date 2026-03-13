@@ -1,0 +1,24 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Nymea Energy Manager",
+        "description": "Verbindungsdetails zum Nymea-Server eingeben (Consolinno Leaflet HEMS)",
+        "data": {
+          "host": "Host / IP-Adresse",
+          "port": "Port",
+          "username": "Benutzername",
+          "password": "Passwort"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Verbindung zum Nymea-Server fehlgeschlagen. Bitte Host und Port prüfen.",
+      "invalid_auth": "Authentifizierung fehlgeschlagen. Bitte Benutzername und Passwort prüfen.",
+      "unknown": "Unbekannter Fehler aufgetreten."
+    },
+    "abort": {
+      "already_configured": "Dieser Nymea-Server ist bereits konfiguriert."
+    }
+  }
+}
