@@ -96,5 +96,4 @@ The integration automatically creates these derived sensors under the **Energy S
 - TLS certificate validation is disabled (self-signed certificates are common on local HEMS systems)
 
 ## License
-
-MIT License – see [LICENSE](LICENSE) for details.
+CC BY-NC 4.0 – Non-commercial use only. See [LICENSE](LICENSE) for details.
