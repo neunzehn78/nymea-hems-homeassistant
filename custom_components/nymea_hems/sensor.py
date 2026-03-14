@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime, timezone
 
-from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -50,10 +50,25 @@ class NymeaSensor(CoordinatorEntity, SensorEntity):
         if data is None:
             return None
         value = data["value"]
+
+        # Ignore zero values for total_increasing energy sensors –
+        # inverters briefly report 0 on startup which would reset the counter
+        if (
+            self.state_class == SensorStateClass.TOTAL_INCREASING
+            and self.device_class == SensorDeviceClass.ENERGY
+            and isinstance(value, (int, float))
+            and value == 0
+        ):
+            return self._last_valid_value if hasattr(self, "_last_valid_value") else None
+
         if self.device_class == SensorDeviceClass.TIMESTAMP and isinstance(value, (int, float)):
             return datetime.fromtimestamp(value, tz=timezone.utc)
         if isinstance(value, float):
-            return round(value, 3)
+            value = round(value, 3)
+
+        if isinstance(value, (int, float)) and value != 0:
+            self._last_valid_value = value
+
         return value
 
     @property
