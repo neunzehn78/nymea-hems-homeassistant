@@ -84,6 +84,24 @@ views:
             layout: vertical
           - type: custom:mushroom-template-card
             primary: >
+              {{ states('sensor.wallbox_ladeleistung') | float(0) | round(0) }} W
+            secondary: >
+              {% set m = states('sensor.wallbox_lademodus') %}
+              {% if m == 'surplus' %}A
+              {% elif m == 'surplus_plus' %}A+
+              {% elif m == 'manual' %}M
+              {% elif m == 'off' %}AUS
+              {% else %}{{ m }}{% endif %}
+            icon: mdi:ev-station
+            icon_color: >
+              {% set m = states('sensor.wallbox_lademodus') %}
+              {% if m == 'surplus_plus' %}amber
+              {% elif m == 'surplus' %}green
+              {% elif m == 'manual' %}blue
+              {% else %}white{% endif %}
+            layout: vertical
+          - type: custom:mushroom-template-card
+            primary: >
               {% if states('sensor.sg_ready_wp_gpio2state') == 'True' %}Boost
               {% else %}Normal{% endif %}
             secondary: SG Ready WP
@@ -171,6 +189,14 @@ views:
             secondary: Netzbezug heute
             icon: mdi:transmission-tower-import
             icon_color: red
+            layout: vertical
+
+          - type: custom:mushroom-template-card
+            primary: >
+              {{ states('sensor.wallbox_ladeenergie_heute') | float(0) | round(2) }} kWh
+            secondary: Wallbox heute
+            icon: mdi:ev-station
+            icon_color: teal
             layout: vertical
 
       # ── Batterie SOC Verlauf ────────────────────────────
