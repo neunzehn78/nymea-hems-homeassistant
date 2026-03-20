@@ -1,0 +1,360 @@
+title: Solar HEMS
+views:
+
+  # ═══════════════════════════════════════════════════════
+  # VIEW 1 – JETZT
+  # ═══════════════════════════════════════════════════════
+  - title: Jetzt
+    path: jetzt
+    icon: mdi:solar-power-variant
+
+    cards:
+
+      # ── Zeile 1: WR1, WR2, Einspeisung, Haus ───────────
+      - type: horizontal-stack
+        cards:
+          - type: custom:mushroom-template-card
+            primary: >
+              {{ states('sensor.pv_wr1_leistung') | float(0) | round(0) }} W
+            secondary: WR1
+            icon: mdi:solar-power
+            icon_color: >
+              {% if states('sensor.pv_wr1_leistung') | float(0) > 100 %}amber{% else %}grey{% endif %}
+            layout: vertical
+          - type: custom:mushroom-template-card
+            primary: >
+              {{ states('sensor.pv_wr2_leistung') | float(0) | round(0) }} W
+            secondary: WR2
+            icon: mdi:solar-power
+            icon_color: >
+              {% if states('sensor.pv_wr2_leistung') | float(0) > 100 %}amber{% else %}grey{% endif %}
+            layout: vertical
+          - type: custom:mushroom-template-card
+            primary: >
+              {% set p = states('sensor.hy_switch_currentpower') | float(0) %}
+              {{ p | abs | round(0) }} W
+            secondary: >
+              {% set p = states('sensor.hy_switch_currentpower') | float(0) %}
+              {% if p > 50 %}Netzbezug{% elif p < -50 %}Einspeisung{% else %}Netz OK{% endif %}
+            icon: mdi:transmission-tower
+            icon_color: >
+              {% set p = states('sensor.hy_switch_currentpower') | float(0) %}
+              {% if p > 50 %}red{% elif p < -50 %}cyan{% else %}green{% endif %}
+            layout: vertical
+          - type: custom:mushroom-template-card
+            primary: >
+              {{ states('sensor.energy_system_house_consumption') | float(0) | round(0) }} W
+            secondary: Hausverbrauch
+            icon: mdi:home-lightning-bolt
+            icon_color: blue
+            layout: vertical
+
+      # ── Zeile 2: Batterie, EPEX, SG Ready ───────────────
+      - type: horizontal-stack
+        cards:
+          - type: custom:mushroom-template-card
+            primary: >
+              {{ states('sensor.byd_hvs_10_2_batterylevel') | round(0) }} %
+            secondary: >
+              {% set s = states('sensor.byd_hvs_10_2_chargingstate') %}
+              {% set p = states('sensor.byd_hvs_10_2_currentpower') | float(0) | abs | round(0) %}
+              {% if s == 'charging' %}↑ {{ p }} W lädt
+              {% elif s == 'discharging' %}↓ {{ p }} W entlädt
+              {% else %}Standby{% endif %}
+            icon: >
+              {% set soc = states('sensor.byd_hvs_10_2_batterylevel') | float(0) %}
+              {% if soc >= 90 %}mdi:battery
+              {% elif soc >= 70 %}mdi:battery-80
+              {% elif soc >= 50 %}mdi:battery-60
+              {% elif soc >= 30 %}mdi:battery-40
+              {% elif soc >= 15 %}mdi:battery-20
+              {% else %}mdi:battery-alert{% endif %}
+            icon_color: >
+              {% set s = states('sensor.byd_hvs_10_2_chargingstate') %}
+              {% if s == 'charging' %}green{% elif s == 'discharging' %}orange{% else %}grey{% endif %}
+            layout: vertical
+          - type: custom:mushroom-template-card
+            primary: >
+              {{ states('sensor.epex_day_ahead_currenttotalcost') | float(0) | round(2) }} ct/kWh
+            secondary: EPEX Strompreis
+            icon: mdi:currency-eur
+            icon_color: >
+              {% set p = states('sensor.epex_day_ahead_currenttotalcost') | float(0) %}
+              {% if p < 15 %}green{% elif p < 25 %}amber{% else %}red{% endif %}
+            layout: vertical
+          - type: custom:mushroom-template-card
+            primary: >
+              {% if states('sensor.sg_ready_wp_gpio2state') == 'True' %}Boost
+              {% else %}Normal{% endif %}
+            secondary: SG Ready WP
+            icon: mdi:heat-pump
+            icon_color: >
+              {% if states('sensor.sg_ready_wp_gpio2state') == 'True' %}red{% else %}green{% endif %}
+            layout: vertical
+
+      # ── Flowchart volle Breite ───────────────────────────
+      - type: custom:power-flow-card-plus
+        entities:
+          grid:
+            entity: sensor.hy_switch_currentpower
+            name: Netz
+            icon: mdi:transmission-tower
+          solar:
+            entity: sensor.energy_system_pv_power
+            name: PV
+            icon: mdi:solar-power
+          battery:
+            entity: sensor.byd_hvs_10_2_currentpower
+            name: BYD HVS
+            state_of_charge: sensor.byd_hvs_10_2_batterylevel
+            invert_state: true
+          home:
+            entity: sensor.energy_system_house_consumption
+            name: Haus
+            icon: mdi:home
+        kw_decimals: 2
+        w_decimals: 0
+        min_flow_rate: 0.3
+        max_flow_rate: 2
+        watt_threshold: 1000
+
+  # ═══════════════════════════════════════════════════════
+  # VIEW 2 – HEUTE
+  # ═══════════════════════════════════════════════════════
+  - title: Heute
+    path: heute
+    icon: mdi:chart-line
+
+    cards:
+
+      # ── Zeile 1: PV, Batterie geladen, Batterie entladen ──
+      - type: horizontal-stack
+        cards:
+          - type: custom:mushroom-template-card
+            primary: >
+              {{ (states('sensor.pv_wr1_heute') | float(0) + states('sensor.pv_wr2_heute') | float(0)) | round(2) }} kWh
+            secondary: PV gesamt heute
+            icon: mdi:solar-power-variant
+            icon_color: amber
+            layout: vertical
+
+          - type: custom:mushroom-template-card
+            primary: >
+              {{ states('sensor.batterie_geladen_heute') | float(0) | round(2) }} kWh
+            secondary: Batterie geladen heute
+            icon: mdi:battery-arrow-up
+            icon_color: green
+            layout: vertical
+
+          - type: custom:mushroom-template-card
+            primary: >
+              {{ states('sensor.batterie_entladen_heute') | float(0) | round(2) }} kWh
+            secondary: Batterie entladen heute
+            icon: mdi:battery-arrow-down
+            icon_color: orange
+            layout: vertical
+
+      # ── Zeile 2: Einspeisung, Netzbezug ─────────────────
+      - type: horizontal-stack
+        cards:
+          - type: custom:mushroom-template-card
+            primary: >
+              {{ states('sensor.netzeinspeisung_heute') | float(0) | round(2) }} kWh
+            secondary: Einspeisung heute
+            icon: mdi:transmission-tower-export
+            icon_color: cyan
+            layout: vertical
+
+          - type: custom:mushroom-template-card
+            primary: >
+              {{ states('sensor.netzbezug_heute') | float(0) | round(2) }} kWh
+            secondary: Netzbezug heute
+            icon: mdi:transmission-tower-import
+            icon_color: red
+            layout: vertical
+
+      # ── Batterie SOC Verlauf ────────────────────────────
+      - type: custom:apexcharts-card
+        header:
+          show: true
+          title: 🔋 Batterie SOC heute
+          show_states: true
+          colorize_states: true
+        graph_span: 24h
+        span:
+          start: day
+        apex_config:
+          chart:
+            height: 200
+            background: "#111811"
+            toolbar:
+              show: false
+          grid:
+            borderColor: "#2a3a2a"
+          theme:
+            mode: dark
+          yaxis:
+            min: 0
+            max: 100
+        series:
+          - entity: sensor.byd_hvs_10_2_batterylevel
+            name: SOC
+            color: "#66bb6a"
+            type: area
+            fill_raw: "null"
+            curve: smooth
+            opacity: 0.3
+            stroke_width: 2
+            unit: "%"
+            extend_to: false
+
+      # ── Leistungsverlauf heute ──────────────────────────
+      - type: custom:apexcharts-card
+        header:
+          show: true
+          title: ⚡ Leistungsverlauf heute
+          show_states: true
+          colorize_states: true
+        graph_span: 24h
+        span:
+          start: day
+        now:
+          show: true
+          label: Jetzt
+          color: white
+        apex_config:
+          chart:
+            height: 300
+            background: "#111811"
+            toolbar:
+              show: false
+          grid:
+            borderColor: "#2a3a2a"
+          theme:
+            mode: dark
+          tooltip:
+            x:
+              format: HH:mm
+        series:
+          - entity: sensor.pv_wr1_leistung
+            name: WR1
+            extend_to: false
+            color: "#f5a623"
+            type: area
+            fill_raw: "null"
+            curve: smooth
+            opacity: 0.25
+            stroke_width: 2
+          - entity: sensor.pv_wr2_leistung
+            name: WR2
+            extend_to: false
+            color: "#ffd04b"
+            type: area
+            fill_raw: "null"
+            curve: smooth
+            opacity: 0.25
+            stroke_width: 2
+          - entity: sensor.energy_system_house_consumption
+            name: Verbrauch
+            extend_to: false
+            color: "#4fc3f7"
+            type: line
+            curve: smooth
+            stroke_width: 2
+          - entity: sensor.byd_hvs_10_2_currentpower
+            name: Batterie
+            extend_to: false
+            color: "#66bb6a"
+            type: line
+            curve: smooth
+            stroke_width: 2
+          - entity: sensor.hy_switch_currentpower
+            name: Netz
+            extend_to: false
+            color: "#ef5350"
+            type: line
+            curve: smooth
+            stroke_width: 2
+
+  # ═══════════════════════════════════════════════════════
+  # VIEW 3 – GERÄTE
+  # ═══════════════════════════════════════════════════════
+  - title: Geräte
+    path: geraete
+    icon: mdi:devices
+
+    cards:
+
+      - type: entities
+        title: bph WR1
+        show_header_toggle: false
+        entities:
+          - entity: sensor.bph_wr1_currentpower
+            name: Leistung
+          - entity: sensor.bph_wr1_currentpowerphasea
+            name: Phase L1
+          - entity: sensor.bph_wr1_currentpowerphaseb
+            name: Phase L2
+          - entity: sensor.bph_wr1_currentpowerphasec
+            name: Phase L3
+          - entity: sensor.bph_wr1_totalenergyproduced
+            name: Gesamtertrag
+          - entity: sensor.bph_wr1_frequency
+            name: Frequenz
+          - entity: sensor.bph_wr1_pvvoltage1
+            name: PV Spannung 1
+          - entity: sensor.bph_wr1_pvvoltage2
+            name: PV Spannung 2
+
+      - type: entities
+        title: bph WR2
+        show_header_toggle: false
+        entities:
+          - entity: sensor.bph_wr2_currentpower
+            name: Leistung
+          - entity: sensor.bph_wr2_currentpowerphasea
+            name: Phase L1
+          - entity: sensor.bph_wr2_currentpowerphaseb
+            name: Phase L2
+          - entity: sensor.bph_wr2_currentpowerphasec
+            name: Phase L3
+          - entity: sensor.bph_wr2_totalenergyproduced
+            name: Gesamtertrag
+          - entity: sensor.bph_wr2_frequency
+            name: Frequenz
+          - entity: sensor.bph_wr2_pvvoltage1
+            name: PV Spannung 1
+          - entity: sensor.bph_wr2_pvvoltage2
+            name: PV Spannung 2
+
+      - type: entities
+        title: BYD HVS 10.2
+        show_header_toggle: false
+        entities:
+          - entity: sensor.byd_hvs_10_2_batterylevel
+            name: SOC
+          - entity: sensor.byd_hvs_10_2_currentpower
+            name: Leistung
+          - entity: sensor.byd_hvs_10_2_chargingstate
+            name: Status
+          - entity: sensor.byd_hvs_10_2_capacity
+            name: Kapazität
+
+      - type: entities
+        title: hy-switch Netz
+        show_header_toggle: false
+        entities:
+          - entity: sensor.hy_switch_currentpower
+            name: Leistung
+          - entity: sensor.hy_switch_totalenergyconsumed
+            name: Bezug gesamt
+          - entity: sensor.hy_switch_totalenergyproduced
+            name: Einspeisung gesamt
+          - entity: sensor.hy_switch_frequency
+            name: Frequenz
+          - entity: sensor.hy_switch_voltagephasea
+            name: Spannung L1
+          - entity: sensor.hy_switch_voltagephaseb
+            name: Spannung L2
+          - entity: sensor.hy_switch_voltagephasec
+            name: Spannung L3
